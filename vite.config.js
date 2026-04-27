@@ -45,12 +45,12 @@ function generateHtmlShell(slug) {
     <script type="module">
       import React from 'react';
       import { createRoot } from 'react-dom/client';
-      import App from '/src/${slug}/index.${entryExt}';
+      import App, { meta as appMeta } from '/src/${slug}/index.${entryExt}';
       import SiteHeader from '/src/components/SiteHeader.jsx';
       const base = '/${REPO_NAME}/';
       const crumbs = [
         { label: 'Visual Aids', href: base },
-        { label: (App.meta && App.meta.title) ? App.meta.title : '${title}' },
+        { label: appMeta ? appMeta.title : '${title}' },
       ];
       createRoot(document.getElementById('root')).render(
         React.createElement(React.Fragment, null,
