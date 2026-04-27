@@ -46,6 +46,7 @@ function generateHtmlShell(slug) {
       import '/src/site.js';
       import React from 'react';
       import { createRoot } from 'react-dom/client';
+      import { flushSync } from 'react-dom';
       import App, { meta as appMeta } from '/src/${slug}/index.${entryExt}';
       import SiteHeader from '/src/components/SiteHeader.jsx';
       const base = '/${REPO_NAME}/';
@@ -53,14 +54,17 @@ function generateHtmlShell(slug) {
         { label: 'Visual Aids', href: base },
         { label: appMeta ? appMeta.title : '${title}' },
       ];
-      createRoot(document.getElementById('root')).render(
-        React.createElement(React.Fragment, null,
-          React.createElement(SiteHeader, { crumbs }),
-          React.createElement('div', { className: 'page-content flex-1 bg-slate-50' },
-            React.createElement(App)
+      const root = createRoot(document.getElementById('root'));
+      flushSync(() => {
+        root.render(
+          React.createElement(React.Fragment, null,
+            React.createElement(SiteHeader, { crumbs }),
+            React.createElement('div', { className: 'page-content flex-1 bg-slate-50' },
+              React.createElement(App)
+            )
           )
-        )
-      );
+        );
+      });
     </script>
   </body>
 </html>

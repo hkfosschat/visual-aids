@@ -8,6 +8,8 @@
 
 > **Bug fix (post-implementation):** The original plan set `data-nav` on the old page's `<html>` inside the `navigate` listener. MPA View Transition pseudo-elements are evaluated in the **new** document's context, so the attribute was invisible to them and only the default cross-fade fired. Fix: persist to `sessionStorage` on the old page; restore via `pagereveal` on the new page.
 
+> **Bug fix 2 (post-implementation):** React's asynchronous rendering meant the new page snapshot was taken while the DOM was empty (`<div id="root"></div>`), causing the browser to skip `.page-content` slide rules and fallback to cross-fade. Fix: Wrap the initial `root.render()` in `flushSync` from `react-dom` in both `src/index.jsx` and `vite.config.js`. Also added `mix-blend-mode: normal` to `.page-content` pseudo-elements.
+
 **Tech Stack:** CSS View Transitions API, Navigation API, Tailwind (CDN — inline CSS for critical animation rules), Playwright for smoke tests.
 
 ---

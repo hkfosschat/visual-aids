@@ -1,6 +1,7 @@
 import './site.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 import SiteHeader from './components/SiteHeader.jsx';
 
 // Discover all aid modules at build time.
@@ -68,4 +69,7 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const root = createRoot(document.getElementById('root'));
+flushSync(() => {
+  root.render(<App />);
+});

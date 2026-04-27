@@ -48,3 +48,11 @@ window.addEventListener('pagereveal', () => {
   }
 });
 ```
+
+## 2026-04-27 — View Transition slide still not firing (React CSR timing)
+
+**Symptom:** After fixing the `data-nav` attribute, the directional slide still wasn't happening on the `page-content` (only the default cross-fade).
+
+**Root cause:** The app is Client-Side Rendered (CSR). When navigating, the browser receives an empty `<div id="root"></div>` and fires the `pagereveal` event to capture the "new page" state for the View Transition. Because React's `createRoot().render(...)` is asynchronous, the DOM is empty during the snapshot. The browser doesn't find the `.page-content` element, discards the directional slide rules, and falls back to a default document cross-fade.
+
+**Fix:** Force React to render synchronously on initial load using `flushSync` from `react-dom`. This ensures the `.page-content` element exists in the DOM *before* the browser takes the transition snapshot. Additionally, set `mix-blend-mode: normal` on the `page-content` transition pseudo-elements to override the default `plus-lighter` blend mode, which causes bright ghosting during slides.
