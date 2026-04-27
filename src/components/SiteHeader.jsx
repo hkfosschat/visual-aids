@@ -14,10 +14,10 @@ export default function SiteHeader({ crumbs = [] }) {
           {crumbs.map((crumb, i) => {
             const isLast = i === crumbs.length - 1;
             return (
-              <li key={i} className="flex items-center gap-1">
+              <li key={crumb.href ?? crumb.label} className="flex items-center gap-1">
                 {i > 0 && <span aria-hidden="true" className="text-slate-300">/</span>}
                 {isLast || !crumb.href ? (
-                  <span className={isLast ? 'text-slate-900 font-medium' : 'text-slate-500'}>
+                  <span aria-current={isLast ? 'page' : undefined} className={isLast ? 'text-slate-900 font-medium' : 'text-slate-500'}>
                     {crumb.label}
                   </span>
                 ) : (
