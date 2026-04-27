@@ -1,1 +1,0 @@
-import{m as t,c as a,R as e,S as l,A as s}from"./SiteHeader-B94hNuWd.js";const r="/visual-aids/",n=[{label:"Visual Aids",href:r},{label:t?t.title:"C String"}];a(document.getElementById("root")).render(e.createElement(e.Fragment,null,e.createElement(l,{crumbs:n}),e.createElement("div",{className:"page-content flex-1 bg-slate-50"},e.createElement(s))));
