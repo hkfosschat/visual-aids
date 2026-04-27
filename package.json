@@ -1,0 +1,25 @@
+{
+  "name": "hkfosschat-visual-aids",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate": "node scripts/validate-aids.js",
+    "test": "npm run validate && vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "lucide-react": "^0.378.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.2.0",
+    "vitest": "^1.6.0"
+  }
+}
