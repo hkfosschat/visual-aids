@@ -2,10 +2,11 @@
 node_modules/
 
 # Build output
-dist/
+/dist/
+/generated/
 
 # Generated per-aid HTML entry shells (date-prefixed folders at repo root)
-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*/
+/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*/
 
 # Test result of playwright tests
 /test-results/
