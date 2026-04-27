@@ -46,7 +46,18 @@ function generateHtmlShell(slug) {
       import React from 'react';
       import { createRoot } from 'react-dom/client';
       import App from '/src/${slug}/index.${entryExt}';
-      createRoot(document.getElementById('root')).render(React.createElement(App));
+      import SiteHeader from '/src/components/SiteHeader.jsx';
+      const base = '/${REPO_NAME}/';
+      const crumbs = [
+        { label: 'Visual Aids', href: base },
+        { label: (App.meta && App.meta.title) ? App.meta.title : '${title}' },
+      ];
+      createRoot(document.getElementById('root')).render(
+        React.createElement(React.Fragment, null,
+          React.createElement(SiteHeader, { crumbs }),
+          React.createElement(App)
+        )
+      );
     </script>
   </body>
 </html>
