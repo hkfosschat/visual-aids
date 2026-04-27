@@ -43,6 +43,7 @@ function generateHtmlShell(slug) {
   <body>
     <div id="root"></div>
     <script type="module">
+      import '/src/site.js';
       import React from 'react';
       import { createRoot } from 'react-dom/client';
       import App, { meta as appMeta } from '/src/${slug}/index.${entryExt}';
@@ -55,7 +56,9 @@ function generateHtmlShell(slug) {
       createRoot(document.getElementById('root')).render(
         React.createElement(React.Fragment, null,
           React.createElement(SiteHeader, { crumbs }),
-          React.createElement(App)
+          React.createElement('div', { className: 'page-content flex-1 bg-slate-50' },
+            React.createElement(App)
+          )
         )
       );
     </script>

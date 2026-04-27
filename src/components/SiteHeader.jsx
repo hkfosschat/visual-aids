@@ -8,7 +8,7 @@ import React from 'react';
  */
 export default function SiteHeader({ crumbs = [] }) {
   return (
-    <header className="w-full bg-white border-b border-slate-200 px-6 py-3">
+    <header className="site-header w-full bg-white border-b border-slate-200 px-6 py-3">
       <nav aria-label="breadcrumb">
         <ol className="flex items-center gap-1 text-sm text-slate-500 flex-wrap">
           {crumbs.map((crumb, i) => {

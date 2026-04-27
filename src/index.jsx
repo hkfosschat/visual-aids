@@ -1,3 +1,4 @@
+import './site.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import SiteHeader from './components/SiteHeader.jsx';
@@ -36,7 +37,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader crumbs={[{ label: 'Visual Aids' }]} />
-      <div className="flex-1 bg-slate-50 p-8 font-sans">
+      <div className="page-content flex-1 bg-slate-50 p-8 font-sans">
         <div className="max-w-4xl mx-auto">
           <h1 className="sr-only">Visual Aids</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

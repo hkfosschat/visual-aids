@@ -1,0 +1,82 @@
+/* src/transitions.css */
+
+/* Enable MPA View Transitions in supporting browsers (Chrome 126+). */
+/* Other browsers get instant navigation — no JS or fallback needed. */
+@view-transition {
+  navigation: auto;
+}
+
+/* ─── Named transition layers ──────────────────────────────────────────── */
+
+.site-header {
+  view-transition-name: site-header;
+}
+
+.page-content {
+  view-transition-name: page-content;
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────── */
+
+@keyframes vt-slide-in-from-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes vt-slide-out-to-left {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+
+@keyframes vt-slide-in-from-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes vt-slide-out-to-right {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes vt-skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ─── Forward navigation (going deeper: index → aid, aid → sub-aid) ─────── */
+
+html[data-nav="forward"]::view-transition-old(page-content) {
+  animation: vt-slide-out-to-left 0.28s ease-in-out;
+}
+
+html[data-nav="forward"]::view-transition-new(page-content) {
+  animation: vt-slide-in-from-right 0.28s ease-in-out;
+}
+
+/* ─── Backward navigation (going shallower: aid → index, sub-aid → aid) ── */
+
+html[data-nav="backward"]::view-transition-old(page-content) {
+  animation: vt-slide-out-to-right 0.28s ease-in-out;
+}
+
+html[data-nav="backward"]::view-transition-new(page-content) {
+  animation: vt-slide-in-from-left 0.28s ease-in-out;
+}
+
+/* ─── Header: always cross-fade (no slide) ──────────────────────────────── */
+
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  animation-duration: 0.18s;
+  animation-timing-function: ease-in-out;
+}
+
+/* ─── Skeleton shimmer ──────────────────────────────────────────────────── */
+
+.vt-skeleton-card {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: vt-skeleton-shimmer 1.2s ease-in-out infinite;
+  border-radius: 1rem;
+  height: 8rem;
+}

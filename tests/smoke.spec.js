@@ -43,3 +43,19 @@ for (const slug of slugs) {
     expect(jsErrors, `JS errors on ${slug}: ${jsErrors.join(', ')}`).toHaveLength(0);
   });
 }
+
+test('page-content class present on index page', async ({ page }) => {
+  await page.goto(`${BASE}/`);
+  await page.waitForSelector('#root > *', { timeout: 5000 });
+  await expect(page.locator('.page-content')).toBeVisible();
+  await expect(page.locator('.site-header')).toBeVisible();
+});
+
+for (const slug of slugs) {
+  test(`page-content class present on aid page: ${slug}`, async ({ page }) => {
+    await page.goto(`${BASE}/${slug}/`);
+    await page.waitForSelector('#root > *', { timeout: 5000 });
+    await expect(page.locator('.page-content')).toBeVisible();
+    await expect(page.locator('.site-header')).toBeVisible();
+  });
+}
