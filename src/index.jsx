@@ -1,5 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import SiteHeader from './components/SiteHeader.jsx';
 
 // Discover all aid modules at build time.
 // Key shape: './20260427-c-string/index.jsx'
@@ -33,34 +34,35 @@ const BASE = import.meta.env.BASE_URL; // e.g. /visual-aids/
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Visual Aids</h1>
-        <p className="text-slate-500 mb-8">Interactive learning aids for FOSS Chat.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {aids.map(aid => (
-            <a
-              key={aid.slug}
-              href={`${BASE}${aid.slug}/`}
-              className="block bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <p className="text-xs text-slate-400 font-mono mb-1">{aid.date}</p>
-              <h2 className="text-lg font-semibold text-slate-900 mb-1">{aid.title}</h2>
-              <p className="text-sm text-slate-600 leading-relaxed mb-3">{aid.description}</p>
-              {aid.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {aid.tags.map(tag => (
-                    <span key={tag} className="text-[11px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </a>
-          ))}
+    <>
+      <SiteHeader crumbs={[{ label: 'Visual Aids' }]} />
+      <div className="min-h-screen bg-slate-50 p-8 font-sans">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {aids.map(aid => (
+              <a
+                key={aid.slug}
+                href={`${BASE}${aid.slug}/`}
+                className="block bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <p className="text-xs text-slate-400 font-mono mb-1">{aid.date}</p>
+                <h2 className="text-lg font-semibold text-slate-900 mb-1">{aid.title}</h2>
+                <p className="text-sm text-slate-600 leading-relaxed mb-3">{aid.description}</p>
+                {aid.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {aid.tags.map(tag => (
+                      <span key={tag} className="text-[11px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
