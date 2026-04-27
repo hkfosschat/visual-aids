@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "serve": "vite preview --port 4173",
     "validate": "node scripts/validate-aids.js",
     "test": "npm run validate && vitest run",
     "test:e2e": "playwright test"
