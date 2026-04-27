@@ -42,7 +42,12 @@ function generateHtmlShell(slug) {
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/${slug}/index.${entryExt}"></script>
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import App from '/src/${slug}/index.${entryExt}';
+      createRoot(document.getElementById('root')).render(React.createElement(App));
+    </script>
   </body>
 </html>
 `;
