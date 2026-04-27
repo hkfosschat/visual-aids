@@ -7,7 +7,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_NAME = 'visual-aids';
 const SRC_DIR = path.resolve(__dirname, 'src');
-const GEN_DIR = path.resolve(__dirname, 'generated');
+// Shells are written to <root>/<slug>/index.html so Vite outputs them to dist/<slug>/index.html.
+// These folders are gitignored via the pattern in .gitignore.
+const GEN_DIR = __dirname;
 
 function discoverAids() {
   if (!fs.existsSync(SRC_DIR)) return [];
