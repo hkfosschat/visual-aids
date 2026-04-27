@@ -4,7 +4,9 @@
 
 **Goal:** Add CSS View Transition API animations to the MPA — directional slides between depth levels, header cross-fade, and a ghost/skeleton frame when navigating across multiple levels (e.g. index → sub-aid).
 
-**Architecture:** CSS-only `@view-transition { navigation: auto }` provides automatic cross-fades in Chrome 126+ (other browsers get instant navigation — progressive enhancement). A small inline JS snippet using the Navigation API detects depth change before each navigation and sets `data-nav` on `<html>` so CSS can key directional slide animations on it. For multi-level skips (|depth delta| > 1), the same snippet intercepts the navigation and briefly injects a skeleton DOM representing the skipped level before completing.
+**Architecture:** CSS-only `@view-transition { navigation: auto }` provides automatic cross-fades in Chrome 126+ (other browsers get instant navigation — progressive enhancement). A small inline JS snippet using the Navigation API detects depth change before each navigation and writes the direction to `sessionStorage`; a `pagereveal` listener on the new page reads it and sets `data-nav` on the new `<html>` so CSS directional slide rules match. For multi-level skips (|depth delta| > 1), the same snippet intercepts the navigation and briefly injects a skeleton DOM representing the skipped level before completing.
+
+> **Bug fix (post-implementation):** The original plan set `data-nav` on the old page's `<html>` inside the `navigate` listener. MPA View Transition pseudo-elements are evaluated in the **new** document's context, so the attribute was invisible to them and only the default cross-fade fired. Fix: persist to `sessionStorage` on the old page; restore via `pagereveal` on the new page.
 
 **Tech Stack:** CSS View Transitions API, Navigation API, Tailwind (CDN — inline CSS for critical animation rules), Playwright for smoke tests.
 

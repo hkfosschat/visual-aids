@@ -1,10 +1,26 @@
 // src/nav-transitions.js
 // Runs on every page. Hooks into the Navigation API to:
-//   1. Set data-nav="forward"|"backward" on <html> before each navigation
-//      so CSS can key directional slide animations on it.
+//   1. Persist data-nav="forward"|"backward" to sessionStorage on the old page,
+//      then restore it on the new page via the `pagereveal` event so CSS
+//      directional slide rules (html[data-nav="forward"]) match in the new document.
 //   2. For multi-level skips (|depth delta| > 1), intercept the navigation
 //      and briefly show a skeleton frame representing the skipped level.
+//
+// Why sessionStorage + pagereveal?
+// MPA View Transition pseudo-elements are evaluated in the NEW document's context.
+// Setting data-nav on the OLD page's <html> (inside the navigate listener) is
+// invisible to them — only the new page's <html> matters for CSS matching.
 
+// ── New page: apply persisted direction before transition animations begin ──
+window.addEventListener('pagereveal', () => {
+  const dir = sessionStorage.getItem('vt-nav-dir');
+  if (dir) {
+    document.documentElement.dataset.nav = dir;
+    sessionStorage.removeItem('vt-nav-dir');
+  }
+});
+
+// ── Old page: detect direction and persist it ────────────────────────────────
 if (typeof navigation !== 'undefined') {
   navigation.addEventListener('navigate', (e) => {
     // Only intercept same-origin navigations to real URLs.
@@ -17,7 +33,8 @@ if (typeof navigation !== 'undefined') {
     if (delta === 0) return;
 
     const dir = delta > 0 ? 'forward' : 'backward';
-    document.documentElement.dataset.nav = dir;
+    // Persist for the new page's pagereveal listener to pick up.
+    sessionStorage.setItem('vt-nav-dir', dir);
 
     if (Math.abs(delta) > 1) {
       // Multi-level skip: show a ghost skeleton before completing navigation.
