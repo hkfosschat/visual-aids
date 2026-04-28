@@ -1,5 +1,6 @@
 // src/components/SiteHeader.jsx
 import React from 'react';
+import logo from '../../static/images/logo.webp';
 
 /**
  * crumbs: Array<{ label: string, href?: string }>
@@ -14,9 +15,11 @@ export default function SiteHeader({ crumbs = [] }) {
     <header className="site-header w-full bg-white border-b border-slate-200 px-6 py-3 flex flex-col gap-3">
       {/* Branding Row */}
       <a href={MAIN_SITE_URL} className="flex items-center gap-2 w-fit hover:opacity-80 transition-opacity">
-        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
-          我
-        </div>
+        <img 
+          src={logo} 
+          alt={`${MAIN_SITE_NAME} Logo`} 
+          className="h-8 w-auto object-contain" 
+        />
         <span className="text-lg font-bold text-slate-900 tracking-tight">
           {MAIN_SITE_NAME}
         </span>
