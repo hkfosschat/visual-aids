@@ -92,7 +92,7 @@ async function showSkeletonFrame(destUrl, dir) {
 
   skeleton.innerHTML = `
     <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0.75rem 1.5rem;">
-      <span style="font-size:0.875rem;color:#94a3b8;">我哋講開 / 講題輔助 / </span>
+      <span style="font-size:0.875rem;color:#94a3b8;">主頁 / 講題輔助 / </span>
       <span style="font-size:0.875rem;color:#1e293b;font-weight:500;">${label}</span>
     </div>
     <div style="flex:1;background:#f8fafc;padding:2rem;">
