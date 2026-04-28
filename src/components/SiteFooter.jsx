@@ -22,6 +22,7 @@ export default function SiteFooter() {
             rel="license" 
             href="http://creativecommons.org/licenses/by-sa/4.0/"
             className="text-indigo-600 hover:underline font-medium"
+	    target="_blank"
           >
             Creative Commons Attribution-ShareAlike 4.0 International License
           </a>.
