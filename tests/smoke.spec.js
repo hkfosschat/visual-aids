@@ -17,10 +17,10 @@ test('index page loads and shows all aid cards', async ({ page }) => {
   await page.goto(`${BASE}/`);
   await page.waitForSelector('#root > *', { timeout: 5000 });
 
-  await expect(page).toHaveTitle('Visual Aids');
+  await expect(page).toHaveTitle('講題輔助');
   // Site header with breadcrumb is present
   await expect(page.locator('header nav[aria-label="breadcrumb"]')).toBeVisible();
-  await expect(page.locator('header')).toContainText('Visual Aids');
+  await expect(page.locator('header')).toContainText('講題輔助');
   expect(jsErrors).toHaveLength(0);
 
   // One card link per discovered aid
@@ -38,7 +38,7 @@ for (const slug of slugs) {
     await page.waitForSelector('#root > *', { timeout: 5000 });
     // Site header is present and links back to index
     await expect(page.locator('header nav[aria-label="breadcrumb"]')).toBeVisible();
-    await expect(page.locator('header')).toContainText('Visual Aids');
+    await expect(page.locator('header')).toContainText('講題輔助');
 
     expect(jsErrors, `JS errors on ${slug}: ${jsErrors.join(', ')}`).toHaveLength(0);
   });
