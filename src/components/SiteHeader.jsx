@@ -18,7 +18,7 @@ export default function SiteHeader({ crumbs = [] }) {
         <img 
           src={logo} 
           alt={`${MAIN_SITE_NAME} Logo`} 
-          className="h-8 w-auto object-contain" 
+          className="h-8 w-auto object-contain rounded" 
         />
         <span className="text-lg font-bold text-slate-900 tracking-tight">
           {MAIN_SITE_NAME}
