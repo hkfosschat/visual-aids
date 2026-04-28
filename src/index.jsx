@@ -37,10 +37,10 @@ const BASE = import.meta.env.BASE_URL; // e.g. /visual-aids/
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
-      <SiteHeader crumbs={[{ label: 'Visual Aids' }]} />
+      <SiteHeader crumbs={[{ label: '我哋講開', href: 'https://hkfosschat.github.io/' }, { label: '講題輔助' }]} />
       <div className="page-content flex-1 bg-slate-50 p-8 font-sans">
         <div className="max-w-4xl mx-auto">
-          <h1 className="sr-only">Visual Aids</h1>
+          <h1 className="sr-only">講題輔助</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {aids.map(aid => (
               <a

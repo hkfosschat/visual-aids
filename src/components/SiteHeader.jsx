@@ -7,8 +7,22 @@ import React from 'react';
  * Supports 3+ levels.
  */
 export default function SiteHeader({ crumbs = [] }) {
+  const MAIN_SITE_NAME = "我哋講開";
+  const MAIN_SITE_URL = "https://hkfosschat.github.io/";
+
   return (
-    <header className="site-header w-full bg-white border-b border-slate-200 px-6 py-3">
+    <header className="site-header w-full bg-white border-b border-slate-200 px-6 py-3 flex flex-col gap-3">
+      {/* Branding Row */}
+      <a href={MAIN_SITE_URL} className="flex items-center gap-2 w-fit hover:opacity-80 transition-opacity">
+        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+          我
+        </div>
+        <span className="text-lg font-bold text-slate-900 tracking-tight">
+          {MAIN_SITE_NAME}
+        </span>
+      </a>
+
+      {/* Breadcrumb Row */}
       <nav aria-label="breadcrumb">
         <ol className="flex items-center gap-1 text-sm text-slate-500 flex-wrap">
           {crumbs.map((crumb, i) => {

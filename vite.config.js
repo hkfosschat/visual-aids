@@ -51,7 +51,8 @@ function generateHtmlShell(slug) {
       import SiteHeader from '/src/components/SiteHeader.jsx';
       const base = '/${REPO_NAME}/';
       const crumbs = [
-        { label: 'Visual Aids', href: base },
+        { label: '我哋講開', href: 'https://hkfosschat.github.io/' },
+        { label: '講題輔助', href: base },
         { label: appMeta ? appMeta.title : '${title}' },
       ];
       const root = createRoot(document.getElementById('root'));
