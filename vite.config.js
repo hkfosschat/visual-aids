@@ -49,6 +49,7 @@ function generateHtmlShell(slug) {
       import { flushSync } from 'react-dom';
       import App, { meta as appMeta } from '/src/${slug}/index.${entryExt}';
       import SiteHeader from '/src/components/SiteHeader.jsx';
+      import SiteFooter from '/src/components/SiteFooter.jsx';
       const base = '/${REPO_NAME}/';
       const crumbs = [
         { label: '主頁', href: 'https://hkfosschat.github.io/' },
@@ -62,7 +63,8 @@ function generateHtmlShell(slug) {
             React.createElement(SiteHeader, { crumbs }),
             React.createElement('div', { className: 'page-content flex-1 bg-slate-50' },
               React.createElement(App)
-            )
+            ),
+            React.createElement(SiteFooter)
           )
         );
       });

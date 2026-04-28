@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import SiteHeader from './components/SiteHeader.jsx';
+import SiteFooter from './components/SiteFooter.jsx';
 
 // Discover all aid modules at build time.
 // Key shape: './20260427-c-string/index.jsx'
@@ -65,6 +66,7 @@ function App() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }
