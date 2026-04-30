@@ -37,8 +37,8 @@ function generateHtmlShell(slug) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>\${title} | 講題輔助 | 我哋講開</title>
-    <link rel="icon" type="image/webp" href="/\${REPO_NAME}/favicon.webp" />
+    <title>${title} | 講題輔助 | 我哋講開</title>
+    <link rel="icon" type="image/webp" href="/${REPO_NAME}/favicon.webp" />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
