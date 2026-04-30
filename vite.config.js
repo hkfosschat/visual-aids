@@ -29,15 +29,26 @@ function slugToTitle(slug) {
   return titleSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function getMetaTitle(slug, entryExt) {
+  const filePath = path.join(SRC_DIR, slug, `index.${entryExt}`);
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const match = content.match(/title:\s*['"]([^'"]+)['"]/);
+    if (match) return match[1];
+  } catch (err) {}
+  return slugToTitle(slug);
+}
+
 function generateHtmlShell(slug) {
   const entryExt = fs.existsSync(path.join(SRC_DIR, slug, 'index.jsx')) ? 'jsx' : 'js';
-  const title = slugToTitle(slug);
+  const displayTitle = getMetaTitle(slug, entryExt);
+  
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${title} | 講題輔助 | 我哋講開</title>
+    <title>${displayTitle} | 講題輔助 | 我哋講開</title>
     <link rel="icon" type="image/webp" href="/${REPO_NAME}/favicon.webp" />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -52,10 +63,14 @@ function generateHtmlShell(slug) {
       import SiteHeader from '/src/components/SiteHeader.jsx';
       import SiteFooter from '/src/components/SiteFooter.jsx';
       const base = '/${REPO_NAME}/';
+      
+      const finalTitle = appMeta && appMeta.title ? appMeta.title : '${displayTitle}';
+      document.title = finalTitle + ' | 講題輔助 | 我哋講開';
+      
       const crumbs = [
         { label: '主頁', href: 'https://hkfosschat.github.io/' },
         { label: '講題輔助', href: base },
-        { label: appMeta ? appMeta.title : '${title}' },
+        { label: finalTitle },
       ];
       const root = createRoot(document.getElementById('root'));
       flushSync(() => {
