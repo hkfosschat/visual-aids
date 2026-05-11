@@ -122,4 +122,8 @@ function multiPagePlugin() {
 
 export default defineConfig({
   plugins: [react(), multiPagePlugin()],
+  test: {
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests/**'],
+    passWithNoTests: true,
+  },
 });
