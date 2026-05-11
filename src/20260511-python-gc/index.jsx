@@ -4,367 +4,372 @@ export const meta = {
   tags: ['python', 'memory', 'gc', 'performance'],
 };
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, AlertTriangle, Zap, Layers, Activity, Languages } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Play, Pause, RotateCcw, Activity, 
+  AlertTriangle, Zap, Languages, Maximize, 
+  BarChart2, Clock, Info, Grid, Ghost, ShieldCheck
+} from 'lucide-react';
 
-const HEAP_SIZE = 60;
-const TICK_RATE = 80;
+
+// --- Shared i18n Dictionary ---
+const translations = {
+  en: {
+    title: "Python 3.14 GC: The Complete Trade-off",
+    subtitle: "Exploring Latency, Throughput, and Memory-Level mechanics.",
+    toggleLang: "繁體中文",
+    mode1: "Micro: Latency",
+    mode2: "Macro: Bloat",
+    mode3: "Memory: Wavefront",
+    play: "Play",
+    pause: "Pause",
+    reset: "Reset",
+    classic: "Classic GC (Generational)",
+    incr: "Incremental GC (3.14)",
+    // Mode 1
+    m1Title: "The Latency Problem (Microseconds)",
+    m1Desc: "Watch the moving block. Classic GC uses 'Stop-The-World', halting the app completely to clean memory. Incremental GC does the work in tiny background slices, keeping the app perfectly smooth.",
+    frozen: "STW PAUSE (FROZEN)",
+    smooth: "Smooth Execution",
+    catchingUp: "Catching Up...",
+    // Mode 2
+    m2Title: "The Memory Bloat Problem (Minutes)",
+    m2Desc: "Simulating a high-churn web server. Because Incremental GC doesn't stop the world, objects that die after being scanned become 'Floating Garbage' (Ghosts), severely bloating memory before the next cycle clears them.",
+    liveMem: "Live Objects",
+    reservedMem: "Reserved Memory",
+    oom: "OOM Warning!",
+    // Mode 3
+    m3Title: "The Anatomy of a Leak (Memory Blocks)",
+    m3Desc: "Watch the scanner line. If an object is deleted behind the line (already marked 'Black'), it becomes a Ghost. This is the exact mechanism of the 3.14 memory bloat.",
+    wavefront: "Scanner Wavefront",
+    ghosts: "Floating Garbage (Ghosts)",
+    activity: "Execution Trace (Latency vs. Throughput)",
+    bloat: "Memory Bloat Gap",
+    legendApp: "App Work (Mutator)",
+    legendGC: "GC Work (Collector)",
+    phase: "Phase",
+  },
+  zh: {
+    title: "Python 3.14 GC: 完整的效能權衡",
+    subtitle: "深入探索延遲、吞吐量與記憶體底層機制的相互影響。",
+    toggleLang: "English",
+    mode1: "微觀: 延遲",
+    mode2: "宏觀: 膨脹",
+    mode3: "記憶體: 波前",
+    play: "播放",
+    pause: "暫停",
+    reset: "重置",
+    classic: "Classic GC (傳統分代)",
+    incr: "Incremental GC (3.14 實驗性)",
+    // Mode 1
+    m1Title: "Latency (延遲) 問題",
+    m1Desc: "觀察移動的方塊。Classic GC 採用 'Stop-The-World'，會完全凍結應用程式來清理記憶體。Incremental GC 則在背景切片執行，保持應用程式絕對流暢。",
+    frozen: "STW 暫停 (凍結)",
+    smooth: "流暢執行中",
+    catchingUp: "加速追趕中...",
+    // Mode 2
+    m2Title: "Memory Bloat (記憶體膨脹) 問題",
+    m2Desc: "模擬高負載的網頁伺服器。因為 Incremental GC 不會停機，掃描過後才死亡的物件會變成「幽靈 (Floating Garbage)」，在下一次循環清空前，會導致記憶體嚴重膨脹。",
+    liveMem: "存活物件 (Live)",
+    reservedMem: "佔用記憶體 (Reserved)",
+    oom: "記憶體不足警告 (OOM)!",
+    // Mode 3
+    m3Title: "記憶體洩漏剖析 (記憶體層級)",
+    m3Desc: "觀察掃描線。如果在掃描線後方（已標記為 Black）刪除物件，它會變成幽靈。這就是 3.14 記憶體膨脹的確切機制。",
+    wavefront: "掃描波前 (Wavefront)",
+    ghosts: "浮動垃圾 (幽靈物件)",
+    activity: "執行追蹤 (延遲 vs 吞吐量)",
+    bloat: "記憶體膨脹缺口",
+    legendApp: "應用程式執行 (Mutator)",
+    legendGC: "回收器執行 (Collector)",
+    phase: "階段",
+  }
+};
 
 const App = () => {
-  // --- State ---
-  const [strategy, setStrategy] = useState('classic'); // 'classic' | 'incremental'
+  const [lang, setLang] = useState('en');
+  const [mode, setMode] = useState('memory'); // 'micro', 'macro', or 'memory'
+  const t = translations[lang];
+
+  return (
+    <div className="min-h-screen bg-[#0d1117] text-slate-300 font-sans selection:bg-blue-500/30 pb-12">
+      {/* Top Navigation */}
+      <nav className="bg-[#161b22] border-b border-slate-800 p-4 sticky top-0 z-50 shadow-xl">
+        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+              <Zap size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-slate-100">{t.title}</h1>
+              <p className="text-xs text-slate-400">{t.subtitle}</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 bg-[#0d1117] p-1.5 rounded-xl border border-slate-800">
+            <button 
+              onClick={() => setMode('memory')}
+              className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'memory' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Grid size={16} /> <span className="hidden sm:inline">{t.mode3}</span>
+            </button>
+            <button 
+              onClick={() => setMode('micro')}
+              className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'micro' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Clock size={16} /> <span className="hidden sm:inline">{t.mode1}</span>
+            </button>
+            <button 
+              onClick={() => setMode('macro')}
+              className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'macro' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <BarChart2 size={16} /> <span className="hidden sm:inline">{t.mode2}</span>
+            </button>
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <button 
+              onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-slate-400 hover:text-white transition-colors"
+            >
+              <Languages size={16} /> {t.toggleLang}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto mt-8 px-4">
+        {mode === 'micro' && <MicroScaleView t={t} />}
+        {mode === 'macro' && <MacroScaleView t={t} />}
+        {mode === 'memory' && <MemoryScaleView t={t} />}
+      </main>
+    </div>
+  );
+};
+
+/* ==========================================================================
+   MODE 1: MICRO-SCALE (LATENCY & STW)
+   ========================================================================== */
+const MicroScaleView = ({ t }) => {
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [heap, setHeap] = useState(Array.from({ length: HEAP_SIZE }, () => ({ type: 'free' })));
-  const [gcActive, setGcActive] = useState(false);
-  const [gcSubStep, setGcSubStep] = useState(0);
-  const [timeline, setTimeline] = useState([]);
-  const [lang, setLang] = useState('en'); // 'en' | 'zh'
   
-  const stateRef = useRef({ strategy, isRunning, progress, heap, gcActive, gcSubStep });
+  const [classicState, setClassicState] = useState({ renderedX: 0, isFrozen: false, freezeTimer: 0, isCatchingUp: false });
+  const [incrState, setIncrState] = useState({ renderedX: 0, barrierFlashes: [] });
 
-  useEffect(() => {
-    stateRef.current = { strategy, isRunning, progress, heap, gcActive, gcSubStep };
-  }, [strategy, isRunning, progress, heap, gcActive, gcSubStep]);
+  const requestRef = useRef();
+  const timeRef = useRef(0);
 
-  // --- Translations ---
-  const t = {
-    en: {
-      title: "Python 3.14 GC Internals",
-      subtitle: "Visualizing why Incremental GC reduces latency but increases memory pressure.",
-      strategyLabel: "Collector Strategy",
-      classic: "Classic (Generational)",
-      incremental: "Incremental (3.14)",
-      pause: "Pause",
-      run: "Run Simulation",
-      heapTitle: "Memory Heap",
-      slots: "Slots Available",
-      live: "Live",
-      dead: "Dead Cycle",
-      available: "Available",
-      pressure: "Heap Pressure",
-      liveObj: "Live Objects",
-      floating: "Floating Garbage",
-      trace: "Real-time Execution Trace",
-      entry: "Program Entry",
-      mutator: "Mutator (Logic)",
-      collector: "Collector (GC)",
-      currentT: "Current T",
-      status: "System State",
-      spike: "LATENCY SPIKE DETECTED",
-      lowLat: "LOW LATENCY EXECUTION",
-      descClassic: "Classic GC uses 'Stop-the-World'. When memory fills up, the red bar consumes the timeline, meaning your web server cannot respond to requests during that window.",
-      descIncr: "Incremental GC interleaves GC work. Notice the timeline is a blend of blue and red—no single long pause, keeping the app responsive.",
-      whyRevert: "Why the Revert?",
-      problem: "The Problem",
-      probDesc: <>In <span className="text-blue-400 font-bold">Incremental</span> mode, objects that die *after* the scanner passes them become <span className="text-orange-400 font-bold">Floating Garbage</span>.</>,
-      impact: "The Impact",
-      impactDesc: "On busy servers, this garbage builds up faster than the scanner can finish a lap. Memory pressure hits 100% even though the app 'looks' fine on the timeline.",
-      note: "The incremental GC implementation in 3.14 alpha showed 2-3x memory growth on production-like workloads (Django/HTTPX). We have reverted to the Generational model for 3.14 stable."
-    },
-    zh: {
-      title: "Python 3.14 GC 內部原理",
-      subtitle: "視覺化展示為何 Incremental GC 能降低延遲卻會增加記憶體壓力。",
-      strategyLabel: "Collector 策略",
-      classic: "Classic (Generational)",
-      incremental: "Incremental (3.14)",
-      pause: "暫停",
-      run: "執行 Simulation",
-      heapTitle: "Memory Heap",
-      slots: "可用 Slots",
-      live: "Live",
-      dead: "Dead Cycle",
-      available: "Available",
-      pressure: "Heap 壓力",
-      liveObj: "Live Objects 數量",
-      floating: "Floating Garbage 數量",
-      trace: "即時執行追蹤 (Trace)",
-      entry: "程式進入點",
-      mutator: "Mutator (邏輯)",
-      collector: "Collector (GC)",
-      currentT: "當前時間 T",
-      status: "系統狀態",
-      spike: "偵測到 Latency 峰值",
-      lowLat: "低 Latency 執行中",
-      descClassic: "Classic GC 使用 'Stop-the-World' 機制。當記憶體填滿時，紅色區塊會佔據時間軸，這意味著您的伺服器在該窗口期內無法回應請求。",
-      descIncr: "Incremental GC 交錯執行 GC 工作。請注意時間軸是藍色與紅色的混合——沒有長效的暫停，保持應用程式即時回應。",
-      whyRevert: "為何撤回該功能？",
-      problem: "核心問題",
-      probDesc: <>在 <span className="text-blue-400 font-bold">Incremental</span> 模式下，在 Scanner 掃描過後才死亡的物件會變成 <span className="text-orange-400 font-bold">Floating Garbage</span>。</>,
-      impact: "造成影響",
-      impactDesc: "在繁忙的伺服器上，這些垃圾累積的速度超過了 Scanner 完成一輪掃描的速度。即使時間軸看起來正常，Heap 壓力仍會達到 100%。",
-      note: "3.14 alpha 的 Incremental GC 實作在生產環境工作負載（如 Django/HTTPX）中顯示出 2-3 倍的記憶體增長。因此 3.14 穩定版已撤回至 Generational 模型。"
-    }
-  }[lang];
+  const updatePhysics = () => {
+    timeRef.current += 1;
+    const tVal = timeRef.current;
+    
+    // Sine wave motion
+    const targetX = (Math.sin(tVal * 0.05) + 1) * 50; 
 
-  // --- Actions ---
-  
-  const resetSim = () => {
-    setIsRunning(false);
-    setProgress(0);
-    setGcActive(false);
-    setGcSubStep(0);
-    setTimeline([]);
-    setHeap(Array.from({ length: HEAP_SIZE }, () => ({ type: 'free' })));
+    setClassicState(prev => {
+      let next = { ...prev };
+      if (tVal % 180 === 0) {
+        next.isFrozen = true;
+        next.freezeTimer = 60; 
+      }
+
+      if (next.isFrozen) {
+        next.freezeTimer--;
+        if (next.freezeTimer <= 0) {
+          next.isFrozen = false;
+          next.isCatchingUp = true;
+        }
+      } else if (next.isCatchingUp) {
+        const diff = targetX - next.renderedX;
+        next.renderedX += diff * 0.2; 
+        if (Math.abs(diff) < 1) next.isCatchingUp = false;
+      } else {
+        next.renderedX = targetX;
+      }
+      return next;
+    });
+
+    setIncrState(prev => {
+      let next = { ...prev };
+      next.renderedX = targetX; 
+      if (Math.random() < 0.05) next.barrierFlashes.push(tVal);
+      next.barrierFlashes = next.barrierFlashes.filter(f => tVal - f < 10); 
+      return next;
+    });
+
+    if (isRunning) requestRef.current = requestAnimationFrame(updatePhysics);
   };
 
-  const tick = () => {
+  useEffect(() => {
+    if (isRunning) requestRef.current = requestAnimationFrame(updatePhysics);
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [isRunning]);
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+      <div className="flex justify-between items-start bg-[#161b22] p-6 rounded-2xl border border-slate-800">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-black text-slate-100 mb-2 flex items-center gap-2">
+            <Maximize className="text-blue-500" /> {t.m1Title}
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed">{t.m1Desc}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setIsRunning(!isRunning)} className={`px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all ${isRunning ? 'bg-slate-700 text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
+            {isRunning ? <Pause size={16}/> : <Play size={16}/>} {isRunning ? t.pause : t.play}
+          </button>
+          <button onClick={() => { setIsRunning(false); timeRef.current = 0; setClassicState({renderedX: 50, isFrozen: false, freezeTimer: 0, isCatchingUp: false}); setIncrState({renderedX: 50, barrierFlashes: []}); }} className="p-2 bg-slate-800 rounded-xl text-slate-400 hover:text-white"><RotateCcw size={18}/></button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* CLASSIC VIEW */}
+        <div className={`p-8 rounded-[2rem] border-2 transition-all duration-300 relative overflow-hidden ${classicState.isFrozen ? 'bg-red-950/20 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.15)]' : 'bg-[#161b22] border-slate-800'}`}>
+          <div className="flex justify-between items-center mb-12">
+            <h3 className="text-lg font-black text-white">{t.classic}</h3>
+            {classicState.isFrozen && <span className="px-3 py-1 bg-red-500 text-white text-[10px] font-black rounded-full animate-pulse uppercase">{t.frozen}</span>}
+            {classicState.isCatchingUp && <span className="px-3 py-1 bg-amber-500 text-black text-[10px] font-black rounded-full uppercase">{t.catchingUp}</span>}
+          </div>
+
+          <div className="h-16 w-full bg-[#0d1117] rounded-full border border-slate-800 relative flex items-center p-2 shadow-inner">
+            <div 
+              className={`h-full aspect-square rounded-full flex items-center justify-center shadow-lg transition-transform ${classicState.isFrozen ? 'bg-red-500 scale-90' : classicState.isCatchingUp ? 'bg-amber-400 blur-[1px]' : 'bg-blue-500'}`}
+              style={{ transform: `translateX(calc(${classicState.renderedX} * (100cqw - 100%) / 100))` }}
+            >
+              <Activity size={20} className={classicState.isFrozen ? 'text-white opacity-50' : 'text-white'} />
+            </div>
+            {classicState.isFrozen && (
+              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px] bg-red-950/20 rounded-full z-10">
+                <AlertTriangle className="text-red-500 animate-bounce" size={24} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* INCREMENTAL VIEW */}
+        <div className="p-8 rounded-[2rem] bg-[#161b22] border-2 border-slate-800 relative overflow-hidden">
+          <div className="flex justify-between items-center mb-12">
+            <h3 className="text-lg font-black text-white">{t.incr}</h3>
+            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black rounded-full uppercase">{t.smooth}</span>
+          </div>
+
+          <div className="h-16 w-full bg-[#0d1117] rounded-full border border-slate-800 relative flex items-center p-2 shadow-inner">
+            <div 
+              className="h-full aspect-square rounded-full bg-blue-500 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)] z-10"
+              style={{ transform: `translateX(calc(${incrState.renderedX} * (100cqw - 100%) / 100))` }}
+            >
+              <Activity size={20} className="text-white" />
+            </div>
+            {incrState.barrierFlashes.length > 0 && (
+              <div className="absolute inset-0 rounded-full border-2 border-amber-500/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.2)]" />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================================================
+   MODE 2: MACRO-SCALE (THROUGHPUT & BLOAT)
+   ========================================================================== */
+const MacroScaleView = ({ t }) => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [history, setHistory] = useState([]);
+  
+  const stateRef = useRef({ tick: 0, liveMem: 20, classicReserved: 20, incrReserved: 20, ghosts: 0, incrCycleTimer: 0 });
+
+  const updateData = () => {
     const s = stateRef.current;
-    if (!s.isRunning) return;
+    s.tick += 1;
 
-    const newProgress = s.progress + 0.4;
-    if (newProgress >= 100) {
-      setIsRunning(false);
-      return;
-    }
-
-    let nextHeap = [...s.heap];
-    let nextGcActive = s.gcActive;
-    let nextGcSubStep = s.gcSubStep;
-    let tasksThisTick = [];
-
-    if (s.strategy === 'classic') {
-      const activeCount = nextHeap.filter(c => c.type === 'active' || c.type === 'garbage').length;
-      if (!nextGcActive && activeCount > HEAP_SIZE * 0.75) {
-        nextGcActive = true;
-        nextGcSubStep = 0;
-      }
-
-      if (nextGcActive) {
-        tasksThisTick.push('gc');
-        let processed = 0;
-        while (processed < 5 && nextGcSubStep < HEAP_SIZE) {
-          if (nextHeap[nextGcSubStep].type === 'garbage') {
-            nextHeap[nextGcSubStep] = { type: 'free' };
-          }
-          nextGcSubStep++;
-          processed++;
-        }
-        if (nextGcSubStep >= HEAP_SIZE) nextGcActive = false;
-      } else {
-        tasksThisTick.push('app');
-        if (Math.random() > 0.3) {
-          const freeIdx = nextHeap.findIndex(c => c.type === 'free');
-          if (freeIdx !== -1) {
-            nextHeap[freeIdx] = { type: Math.random() > 0.7 ? 'garbage' : 'active' };
-          }
-        }
-      }
-    } else {
-      tasksThisTick.push('app');
-      tasksThisTick.push('gc');
-      if (Math.random() > 0.3) {
-        const freeIdx = nextHeap.findIndex(c => c.type === 'free');
-        if (freeIdx !== -1) {
-          nextHeap[freeIdx] = { type: Math.random() > 0.7 ? 'garbage' : 'active' };
-        }
-      }
-      const scanSize = 2;
-      for (let i = 0; i < scanSize; i++) {
-        const idx = (nextGcSubStep + i) % HEAP_SIZE;
-        if (nextHeap[idx].type === 'garbage') {
-          nextHeap[idx] = { type: 'free' };
-        }
-      }
-      nextGcSubStep = (nextGcSubStep + scanSize) % HEAP_SIZE;
-    }
-
-    setHeap(nextHeap);
-    setGcActive(nextGcActive);
-    setGcSubStep(nextGcSubStep);
-    setProgress(newProgress);
+    const baseTrend = 20 + (s.tick * 0.1);
+    const wave = Math.sin(s.tick * 0.1) * 10;
+    const noise = (Math.random() - 0.5) * 5;
+    let newLive = Math.max(5, baseTrend + wave + noise);
+    if (newLive > 80) newLive = 80; 
     
-    const newPoints = tasksThisTick.map((t, i) => ({
-      type: t,
-      pos: newProgress + (i * 0.1)
-    }));
-    setTimeline(prev => [...prev, ...newPoints]);
+    const deathRate = Math.max(0, s.liveMem - newLive);
+    s.liveMem = newLive;
+
+    if (s.tick % 40 === 0) s.classicReserved = s.liveMem; 
+    else s.classicReserved = Math.max(s.classicReserved, s.liveMem + noise); 
+
+    s.ghosts += deathRate * 0.8; 
+    s.incrReserved = s.liveMem + s.ghosts;
+    s.incrCycleTimer++;
+    
+    if (s.incrCycleTimer >= 100) {
+      s.ghosts *= 0.2; 
+      s.incrCycleTimer = 0;
+    }
+
+    setHistory(prev => {
+      const next = [...prev, { tick: s.tick, live: s.liveMem, classic: s.classicReserved, incr: s.incrReserved, ghosts: s.ghosts }];
+      if (next.length > 100) return next.slice(1);
+      return next;
+    });
   };
 
   useEffect(() => {
     let interval;
-    if (isRunning) interval = setInterval(tick, TICK_RATE);
+    if (isRunning) interval = setInterval(updateData, 100);
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  const stats = useMemo(() => {
-    const garbage = heap.filter(c => c.type === 'garbage').length;
-    const active = heap.filter(c => c.type === 'active').length;
-    const pressure = Math.round(((garbage + active) / HEAP_SIZE) * 100);
-    return { garbage, active, pressure };
-  }, [heap]);
+  const currentData = history[history.length - 1] || { live: 0, classic: 0, incr: 0, ghosts: 0 };
+  const isOOM = currentData.incr > 90;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900 font-sans">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-lg text-white">
-              <Activity size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{t.title}</h1>
-              <p className="text-slate-600 text-sm md:text-base">{t.subtitle}</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm self-start md:self-center"
-          >
-            <Languages size={18} />
-            {lang === 'en' ? '繁體中文' : 'English'}
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+      <div className="flex justify-between items-start bg-[#161b22] p-6 rounded-2xl border border-slate-800">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-black text-slate-100 mb-2 flex items-center gap-2">
+            <BarChart2 className="text-amber-500" /> {t.m2Title}
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed">{t.m2Desc}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setIsRunning(!isRunning)} className={`px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all ${isRunning ? 'bg-slate-700 text-white' : 'bg-amber-600 text-white hover:bg-amber-500'}`}>
+            {isRunning ? <Pause size={16}/> : <Play size={16}/>} {isRunning ? t.pause : t.play}
           </button>
-        </header>
+          <button onClick={() => { setIsRunning(false); stateRef.current = { tick: 0, liveMem: 20, classicReserved: 20, incrReserved: 20, ghosts: 0, incrCycleTimer: 0 }; setHistory([]); }} className="p-2 bg-slate-800 rounded-xl text-slate-400 hover:text-white"><RotateCcw size={18}/></button>
+        </div>
+      </div>
 
-        {/* Controls */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-wrap gap-6 items-center">
-          <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{t.strategyLabel}</label>
-            <div className="flex bg-slate-100 p-1 rounded-xl">
-              <button
-                onClick={() => { setStrategy('classic'); resetSim(); }}
-                className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${strategy === 'classic' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                {t.classic}
-              </button>
-              <button
-                onClick={() => { setStrategy('incremental'); resetSim(); }}
-                className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${strategy === 'incremental' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                {t.incremental}
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* CLASSIC CHART */}
+        <div className="p-8 rounded-[2rem] bg-[#161b22] border-2 border-slate-800 flex flex-col">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-lg font-black text-white">{t.classic}</h3>
+            <div className="text-right">
+              <div className="text-2xl font-mono text-blue-400">{Math.round(currentData.classic)} MB</div>
             </div>
           </div>
-
-          <div className="h-12 w-px bg-slate-200 hidden md:block" />
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsRunning(!isRunning)}
-              className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] ${isRunning ? 'bg-amber-100 text-amber-700' : 'bg-slate-900 text-white'}`}
-            >
-              {isRunning ? <><Pause size={20} /> {t.pause}</> : <><Play size={20} /> {t.run}</>}
-            </button>
-            <button onClick={resetSim} className="p-3 rounded-xl border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm transition-all">
-              <RotateCcw size={20} />
-            </button>
+          <div className="flex-1 bg-[#0d1117] rounded-2xl border border-slate-800 p-4 relative min-h-[250px]">
+            <LineChart data={history} lineKey="classic" color="#3b82f6" liveColor="#10b981" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Heap View */}
-            <div className={`bg-white p-8 rounded-3xl border-2 transition-all duration-700 ${gcActive ? 'border-red-500 bg-red-50 shadow-2xl' : 'border-transparent shadow-sm'}`}>
-              <div className="flex justify-between items-end mb-8">
-                <div>
-                    <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{t.heapTitle}</h2>
-                    <p className="text-sm text-slate-500">{HEAP_SIZE} {t.slots}</p>
-                </div>
-                <div className="flex gap-4 text-[10px] font-bold uppercase text-slate-400 tracking-tighter">
-                  <span className="flex items-center gap-1.5"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> {t.live}</span>
-                  <span className="flex items-center gap-1.5"><div className="w-3 h-3 bg-orange-500 rounded-sm"></div> {t.dead}</span>
-                  <span className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-100 rounded-sm"></div> {t.available}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-12 gap-3 mb-10">
-                {heap.map((cell, i) => (
-                  <div
-                    key={i}
-                    className={`aspect-square rounded-lg border border-black/5 transition-all duration-500 relative ${
-                      cell.type === 'free' ? 'bg-slate-50' :
-                      cell.type === 'active' ? 'bg-blue-500 shadow-lg' : 'bg-orange-500 shadow-lg'
-                    } ${i === gcSubStep ? 'ring-4 ring-red-500 ring-offset-2 scale-110 z-20 animate-pulse' : ''}`}
-                  />
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                        <span>{t.pressure}</span>
-                        <span className={stats.pressure > 85 ? 'text-red-600' : 'text-slate-600'}>{stats.pressure}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-200 p-0.5">
-                        <div
-                            className={`h-full rounded-full transition-all duration-500 ${stats.pressure > 85 ? 'bg-red-500' : stats.pressure > 60 ? 'bg-amber-500' : 'bg-blue-600'}`}
-                            style={{ width: `${stats.pressure}%` }}
-                        />
-                    </div>
-                </div>
-                <div className="flex gap-4">
-                    <div className="flex-1 bg-blue-50 rounded-2xl p-3 border border-blue-100 text-center">
-                        <div className="text-xl font-black text-blue-700">{stats.active}</div>
-                        <div className="text-[10px] font-bold text-blue-500 uppercase">{t.liveObj}</div>
-                    </div>
-                    <div className="flex-1 bg-orange-50 rounded-2xl p-3 border border-orange-100 text-center">
-                        <div className="text-xl font-black text-orange-700">{stats.garbage}</div>
-                        <div className="text-[10px] font-bold text-orange-500 uppercase">{t.floating}</div>
-                    </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-              <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-6">{t.trace}</h2>
-              <div className="relative h-24 bg-slate-50 rounded-2xl border-2 border-slate-100 overflow-hidden">
-                {timeline.map((t, i) => (
-                  <div
-                    key={i}
-                    className={`absolute top-0 bottom-0 w-[0.4%] ${t.type === 'app' ? 'bg-blue-300' : 'bg-red-500'}`}
-                    style={{ left: `${t.pos}%` }}
-                  />
-                ))}
-                <div 
-                  className="absolute top-0 bottom-0 w-1 bg-slate-900 z-30 shadow-[0_0_15px_rgba(0,0,0,0.5)]" 
-                  style={{ left: `${progress}%`, transition: 'left 80ms linear' }} 
-                />
-              </div>
-              <div className="flex justify-between mt-4 text-[10px] font-black text-slate-400 tracking-widest uppercase">
-                <span>{t.entry}</span>
-                <div className="flex gap-6">
-                    <span className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-300 rounded-sm"></div> {t.mutator}</span>
-                    <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> {t.collector}</span>
-                </div>
-                <span>{t.currentT}</span>
-              </div>
+        {/* INCREMENTAL CHART */}
+        <div className={`p-8 rounded-[2rem] border-2 flex flex-col transition-colors duration-500 ${isOOM ? 'bg-red-950/20 border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)]' : 'bg-[#161b22] border-slate-800'}`}>
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-lg font-black text-white flex items-center gap-3">
+              {t.incr}
+              {isOOM && <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] uppercase rounded-md animate-pulse">{t.oom}</span>}
+            </h3>
+            <div className="text-right">
+              <div className={`text-2xl font-mono ${isOOM ? 'text-red-400' : 'text-amber-400'}`}>{Math.round(currentData.incr)} MB</div>
             </div>
           </div>
-
-          {/* Educational Content */}
-          <div className="space-y-6">
-            <div className={`p-6 rounded-3xl border transition-all duration-500 ${gcActive ? 'bg-red-600 text-white border-red-700' : 'bg-white border-slate-200'}`}>
-                <h3 className={`font-black uppercase tracking-tight mb-2 ${gcActive ? 'text-white' : 'text-slate-800'}`}>{t.status}</h3>
-                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black mb-4 inline-flex ${gcActive ? 'bg-white text-red-600' : 'bg-blue-100 text-blue-700'}`}>
-                    {gcActive ? t.spike : t.lowLat}
+          <div className="flex-1 bg-[#0d1117] rounded-2xl border border-slate-800 p-4 relative min-h-[250px]">
+            <LineChart data={history} lineKey="incr" color={isOOM ? "#ef4444" : "#f59e0b"} liveColor="#10b981" />
+            <div className="absolute top-4 left-4 right-4 flex justify-end pointer-events-none">
+              <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-3 rounded-xl flex items-center gap-4">
+                <div>
+                   <div className="text-[10px] text-slate-500 uppercase font-black">{t.ghosts}</div>
+                   <div className="text-xl font-mono text-red-400">+{Math.round(currentData.ghosts)} MB</div>
                 </div>
-                <p className={`text-sm leading-relaxed ${gcActive ? 'text-red-50' : 'text-slate-600'}`}>
-                    {strategy === 'classic' ? t.descClassic : t.descIncr}
-                </p>
-            </div>
-
-            <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-xl">
-                <h3 className="font-black uppercase tracking-tight text-amber-400 mb-6 flex items-center gap-2">
-                    <AlertTriangle size={20} /> {t.whyRevert}
-                </h3>
-                <div className="space-y-6">
-                    <div className="space-y-2">
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.problem}</span>
-                        <p className="text-sm text-slate-300">{t.probDesc}</p>
-                    </div>
-                    <div className="space-y-2">
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.impact}</span>
-                        <p className="text-sm text-slate-300">{t.impactDesc}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-3xl">
-                <p className="text-[11px] text-emerald-800 leading-relaxed font-medium">
-                    <Zap size={14} className="inline mr-1 mb-1" />
-                    <strong>CPython Team Note:</strong> {t.note}
-                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -372,5 +377,364 @@ const App = () => {
     </div>
   );
 };
+
+const LineChart = ({ data, lineKey, color, liveColor }) => {
+  if (data.length === 0) return <div className="w-full h-full flex items-center justify-center text-sm text-slate-700">Awaiting Data...</div>;
+  const mapY = (val) => 100 - (val / 100) * 100;
+  const mapX = (idx) => (idx / 100) * 100;
+  const livePath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${mapX(i)} ${mapY(d.live)}`).join(' ');
+  const reservedPath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${mapX(i)} ${mapY(d[lineKey])}`).join(' ');
+  const areaPath = [...data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${mapX(i)} ${mapY(d[lineKey])}`), ...data.slice().reverse().map((d, i) => `L ${mapX(data.length - 1 - i)} ${mapY(d.live)}`), 'Z'].join(' ');
+
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+      <line x1="0" y1="25" x2="100" y2="25" stroke="#1f2937" strokeWidth="0.5" strokeDasharray="2" />
+      <line x1="0" y1="50" x2="100" y2="50" stroke="#1f2937" strokeWidth="0.5" strokeDasharray="2" />
+      <line x1="0" y1="75" x2="100" y2="75" stroke="#1f2937" strokeWidth="0.5" strokeDasharray="2" />
+      <path d={areaPath} fill="rgba(239, 68, 68, 0.15)" stroke="none" />
+      <path d={livePath} fill="none" stroke={liveColor} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d={reservedPath} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+/* ==========================================================================
+   MODE 3: MEMORY-SCALE (WAVEFRONT & GHOSTS)
+   ========================================================================== */
+const HEAP_SIZE = 48;
+const MAX_TICKS = 1000;
+
+// Deterministic Instruction Stream
+const generateInstructions = () => {
+  const stream = [];
+  for (let i = 0; i < MAX_TICKS; i++) {
+    const r = Math.random();
+    if (r < 0.15) stream.push({ type: 'ALLOC', id: Math.floor(Math.random() * HEAP_SIZE) });
+    else if (r < 0.27) stream.push({ type: 'KILL', id: Math.floor(Math.random() * HEAP_SIZE) });
+    else stream.push({ type: 'WORK' }); 
+  }
+  return stream;
+};
+
+const MemoryScaleView = ({ t }) => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [tick, setTick] = useState(0);
+
+  // Engine States
+  const [classic, setClassic] = useState({ 
+    heap: Array.from({ length: HEAP_SIZE }, () => ({ status: 'empty' })), 
+    phase: 'IDLE', 
+    history: [] 
+  });
+  const [incr, setIncr] = useState({ 
+    heap: Array.from({ length: HEAP_SIZE }, () => ({ status: 'empty', scanned: false })), 
+    scanPtr: -1, 
+    phase: 'IDLE', 
+    history: [] 
+  });
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const interval = setInterval(() => {
+      setTick(prevTick => {
+        // --- MUTATOR ACTION (Random Allocation/Death) ---
+        const mutatorId = Math.floor(Math.random() * HEAP_SIZE);
+        const rand = Math.random();
+
+        // 1. Update Classic GC
+        setClassic(prev => {
+          let next = { ...prev };
+          let work = { app: 1, gc: 0 };
+          
+          if (next.phase === 'STW') {
+            work = { app: 0, gc: 2 };
+            // Instant cleanup
+            next.heap = next.heap.map(obj => obj.status === 'live' ? obj : { status: 'empty' });
+            next.phase = 'IDLE';
+          } else {
+            // Normal App Behavior
+            if (rand > 0.85 && next.heap[mutatorId].status === 'empty') next.heap[mutatorId] = { status: 'live' };
+            if (rand < 0.15 && next.heap[mutatorId].status === 'live') next.heap[mutatorId] = { status: 'dead' };
+            
+            // Trigger threshold
+            const deadCount = next.heap.filter(o => o.status === 'dead').length;
+            if (deadCount > 8) next.phase = 'STW';
+          }
+          next.history = [...next.history, work].slice(-60);
+          return next;
+        });
+
+        // 2. Update Incremental GC
+        setIncr(prev => {
+          let next = { ...prev };
+          let work = { app: 0.9, gc: 0.15 };
+
+          // Mutator Logic
+          if (rand > 0.85 && next.heap[mutatorId].status === 'empty') {
+             // If we allocate ahead of the scanner, it's unscanned (white). 
+             // If we allocate behind, we must mark it scanned immediately (Blue/Black) to prevent it dying too soon.
+             const isBehind = mutatorId < next.scanPtr;
+             next.heap[mutatorId] = { status: 'live', scanned: isBehind };
+          }
+          if (rand < 0.15 && next.heap[mutatorId].status === 'live') {
+            const isBehind = mutatorId < next.scanPtr;
+            if (next.heap[mutatorId].scanned && isBehind) {
+              // THE GHOST MECHANISM:
+              // It was scanned (Blue), it is behind the line, and it just died.
+              // It cannot be reclaimed this cycle.
+              next.heap[mutatorId].status = 'ghost';
+            } else {
+              next.heap[mutatorId].status = 'dead';
+            }
+          }
+
+          // GC Logic
+          if (next.phase === 'IDLE') {
+            if (next.heap.filter(o => o.status !== 'empty').length > 15) {
+              next.phase = 'SCANNING';
+              next.scanPtr = 0;
+            }
+          } else if (next.phase === 'SCANNING') {
+            const step = 2;
+            for(let i=0; i<step; i++) {
+              const idx = next.scanPtr + i;
+              if (idx < HEAP_SIZE) {
+                if (next.heap[idx].status === 'live') next.heap[idx].scanned = true;
+              }
+            }
+            next.scanPtr += step;
+            if (next.scanPtr >= HEAP_SIZE) next.phase = 'SWEEPING';
+          } else if (next.phase === 'SWEEPING') {
+            next.heap = next.heap.map(obj => 
+              (obj.status === 'dead') ? { status: 'empty', scanned: false } : { ...obj, scanned: false, status: obj.status === 'ghost' ? 'dead' : obj.status }
+            );
+            next.scanPtr = -1;
+            next.phase = 'IDLE';
+          }
+
+          next.history = [...next.history, work].slice(-60);
+          return next;
+        });
+
+        return prevTick + 1;
+      });
+    }, 150 / speed);
+
+    return () => clearInterval(interval);
+  }, [isRunning, speed]);
+
+  const reset = () => {
+    setIsRunning(false);
+    setTick(0);
+    const emptyHeap = () => Array.from({ length: HEAP_SIZE }, () => ({ status: 'empty', scanned: false }));
+    setClassic({ heap: emptyHeap(), phase: 'IDLE', history: [] });
+    setIncr({ heap: emptyHeap(), scanPtr: -1, phase: 'IDLE', history: [] });
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-700">
+      {/* Header & Controls */}
+      <div className="flex flex-col lg:flex-row justify-between items-start bg-[#161b22] p-6 rounded-[2rem] border border-slate-800 gap-6 shadow-2xl">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-black text-slate-100 mb-2 flex items-center gap-2">
+            <Grid className="text-indigo-500" /> {t.m1Title}
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed">{t.m1Desc}</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-[#0d1117] px-4 py-2 rounded-xl border border-slate-800 flex items-center gap-3">
+             <span className="text-[10px] font-black uppercase text-slate-500">Sim Speed</span>
+             <input type="range" min="0.5" max="5" step="0.5" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="accent-indigo-500 w-24" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIsRunning(!isRunning)} className={`px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${isRunning ? 'bg-slate-700 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}>
+              {isRunning ? <Pause size={18}/> : <Play size={18}/>} {isRunning ? t.pause : t.play}
+            </button>
+            <button onClick={reset} className="p-2.5 bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors border border-slate-700"><RotateCcw size={20}/></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* ENGINE 1: CLASSIC */}
+        <div className={`relative bg-[#161b22] border-2 rounded-[2.5rem] p-8 transition-all duration-500 overflow-hidden ${classic.phase === 'STW' ? 'border-red-500/60 shadow-[0_0_50px_rgba(239,68,68,0.2)] bg-red-950/10' : 'border-slate-800 shadow-xl'}`}>
+          {classic.phase === 'STW' && (
+             <div className="absolute inset-0 bg-red-950/40 backdrop-blur-[3px] z-20 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-200">
+                <AlertTriangle size={64} className="text-red-500 animate-bounce mb-4" />
+                <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase drop-shadow-lg">{t.stwAlert}</h3>
+             </div>
+          )}
+          
+          <EngineHeader title={t.classic} phase={classic.phase} />
+          
+          <div className="grid grid-cols-8 gap-3 mb-10">
+            {classic.heap.map((obj, i) => (
+              <MemoryBlock key={i} status={obj.status} />
+            ))}
+          </div>
+          
+          <Legend t={t} />
+          <div className="mt-8">
+            <ExecutionGraph history={classic.history} labels={t} />
+          </div>
+        </div>
+
+        {/* ENGINE 2: INCREMENTAL */}
+        <div className="bg-[#161b22] border-2 border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden shadow-xl">
+          <EngineHeader title={t.incr} phase={incr.phase} accent="indigo" />
+
+          <div className="grid grid-cols-8 gap-3 mb-10 relative">
+            {/* Wavefront Scanner Line */}
+            {incr.scanPtr !== -1 && (
+              <div 
+                className="absolute z-10 pointer-events-none transition-all duration-300 ease-linear"
+                style={{ 
+                  left: `${((incr.scanPtr % 8) / 8) * 100}%`, 
+                  top: `${Math.floor(incr.scanPtr / 8) * 16.6}%`, 
+                  height: '14%', 
+                  width: '3px', 
+                  backgroundColor: '#6366f1', 
+                  boxShadow: '0 0 15px #6366f1, 0 0 30px #6366f1' 
+                }}
+              />
+            )}
+            
+            {incr.heap.map((obj, i) => (
+              <MemoryBlock 
+                key={i} 
+                status={obj.status} 
+                scanned={obj.scanned} 
+                isScanning={i === incr.scanPtr} 
+              />
+            ))}
+          </div>
+
+          <Legend t={t} showGhost />
+          <div className="mt-8">
+            <ExecutionGraph history={incr.history} labels={t} />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+const EngineHeader = ({ title, phase, accent = "slate" }) => (
+  <div className="flex justify-between items-center mb-8">
+    <h2 className="text-lg font-black text-white flex items-center gap-3">
+      <div className={`w-3 h-3 rounded-full ${accent === 'indigo' ? 'bg-indigo-500 animate-pulse shadow-[0_0_10px_#6366f1]' : 'bg-slate-500'}`} /> 
+      {title}
+    </h2>
+    <div className={`text-[10px] font-black px-3 py-1 rounded-full border uppercase tracking-widest ${accent === 'indigo' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>
+      {phase}
+    </div>
+  </div>
+);
+
+const MemoryBlock = ({ status, scanned, isScanning }) => {
+  const base = "aspect-square rounded-xl border-2 transition-all duration-300 flex items-center justify-center relative";
+  
+  if (status === 'empty') return <div className={`${base} bg-[#0a0c10] border-slate-900`} />;
+  
+  let styles = "";
+  let icon = null;
+
+  if (status === 'ghost') {
+    styles = "bg-red-950/40 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)] z-10";
+    icon = <Ghost size={16} className="text-red-500 animate-pulse" />;
+  } else if (scanned) {
+    styles = "bg-indigo-900/40 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.2)]";
+    icon = <ShieldCheck size={16} className="text-indigo-400" />;
+  } else if (status === 'dead') {
+    styles = "bg-red-500 border-red-400";
+  } else if (status === 'live') {
+    styles = "bg-white border-slate-200";
+  }
+
+  return (
+    <div className={`${base} ${styles} ${isScanning ? 'scale-110 ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#161b22]' : ''}`}>
+      {icon}
+    </div>
+  );
+};
+
+const Legend = ({ t, showGhost }) => (
+  <div className="flex flex-wrap gap-4 px-2 py-3 bg-[#0d1117] rounded-2xl border border-slate-800/50">
+    <LegendItem color="bg-white" label={t.legendLive} />
+    <LegendItem color="bg-red-500" label={t.legendDead} />
+    <LegendItem color="bg-indigo-900/40 border-indigo-500" label={t.legendScanned} icon={<ShieldCheck size={10} />} />
+    {showGhost && <LegendItem color="bg-red-950 border-red-500" label={t.legendGhost} icon={<Ghost size={10} />} />}
+  </div>
+);
+
+const LegendItem = ({ color, label, icon }) => (
+  <div className="flex items-center gap-2">
+    <div className={`w-3 h-3 rounded-md ${color} border flex items-center justify-center text-[8px] text-white`}>{icon}</div>
+    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{label}</span>
+  </div>
+);
+
+const ExecutionGraph = ({ history, labels }) => (
+  <div className="space-y-3">
+    <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest flex items-center gap-2 px-1">
+      <BarChart2 size={12} /> {labels.activity}
+    </h4>
+    <div className="h-20 w-full bg-[#0d1117] rounded-2xl border border-slate-800 overflow-hidden flex items-end relative">
+      <div className="absolute top-2 right-3 flex gap-3 z-10">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" /> 
+          <span className="text-[8px] font-black text-slate-500 uppercase">{labels.legendApp}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 bg-red-500 rounded-full" /> 
+          <span className="text-[8px] font-black text-slate-500 uppercase">{labels.legendGC}</span>
+        </div>
+      </div>
+      <div className="flex-1 flex items-end h-full px-1 gap-[1px]">
+        {history.map((h, i) => (
+          <div key={i} className="flex-1 flex flex-col justify-end h-full">
+            <div className="w-full bg-red-500/60" style={{ height: `${h.gc * 30}%` }} />
+            <div className="w-full bg-indigo-500/60" style={{ height: `${h.app * 30}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+/*
+const ExecutionGraph = ({ history, labels }) => (
+  <div className="space-y-3">
+    <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+      <BarChart2 size={12} /> {labels.activity}
+    </h4>
+    <div className="h-24 w-full bg-[#0d1117] rounded-2xl border border-slate-800 overflow-hidden flex items-end relative">
+      <div className="absolute top-2 left-3 flex gap-4 z-10">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 bg-blue-500 rounded-sm" /> 
+          <span className="text-[8px] font-black text-slate-400 uppercase">{labels.legendApp}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 bg-red-500 rounded-sm" /> 
+          <span className="text-[8px] font-black text-slate-400 uppercase">{labels.legendGC}</span>
+        </div>
+      </div>
+      <div className="flex-1 flex items-end h-full px-1 gap-[1px]">
+        {history.map((h, i) => (
+          <div key={i} className="flex-1 flex flex-col justify-end h-full">
+            <div className="w-full bg-red-500/80 transition-all duration-300" style={{ height: `${h.gc * 40}%` }} />
+            <div className="w-full bg-blue-500/80 transition-all duration-300" style={{ height: `${h.app * 40}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+*/
 
 export default App;
