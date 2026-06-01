@@ -20,7 +20,7 @@ const translations = {
     toggleLang: "繁體中文",
     mode1: "Micro: Latency",
     mode2: "Macro: Bloat",
-    mode3: "Memory: Wavefront",
+    mode3: "Internal: Mechanism",
     play: "Play",
     pause: "Pause",
     reset: "Reset",
@@ -47,7 +47,13 @@ const translations = {
     bloat: "Memory Bloat Gap",
     legendApp: "App Work (Mutator)",
     legendGC: "GC Work (Collector)",
+    legendLive: "Live (In Use)",
+    legendDead: "Dead (Garbage)",
+    legendScanned: "Scanned (Marked Safe)",
+    legendGhost: "Ghost (Floating Garbage)",
     phase: "Phase",
+    stwAlert: "STOP THE WORLD",
+    tick: "Tick",
   },
   zh: {
     title: "Python 3.14 GC: 完整的效能權衡",
@@ -55,7 +61,7 @@ const translations = {
     toggleLang: "English",
     mode1: "微觀: 延遲",
     mode2: "宏觀: 膨脹",
-    mode3: "記憶體: 波前",
+    mode3: "底層: 機制",
     play: "播放",
     pause: "暫停",
     reset: "重置",
@@ -82,7 +88,13 @@ const translations = {
     bloat: "記憶體膨脹缺口",
     legendApp: "應用程式執行 (Mutator)",
     legendGC: "回收器執行 (Collector)",
+    legendLive: "存活 (使用中)",
+    legendDead: "死亡 (可回收)",
+    legendScanned: "已掃描 (標記安全)",
+    legendGhost: "幽靈 (浮動垃圾)",
     phase: "階段",
+    stwAlert: "全域暫停 (STW)",
+    tick: "週期",
   }
 };
 
@@ -425,6 +437,7 @@ const MemoryScaleView = ({ t }) => {
   const [classic, setClassic] = useState({ 
     heap: Array.from({ length: HEAP_SIZE }, () => ({ status: 'empty' })), 
     phase: 'IDLE', 
+    stwTimer: 0,
     history: [] 
   });
   const [incr, setIncr] = useState({ 
@@ -445,22 +458,28 @@ const MemoryScaleView = ({ t }) => {
 
         // 1. Update Classic GC
         setClassic(prev => {
-          let next = { ...prev };
+          let next = { ...prev, heap: [...prev.heap] };
           let work = { app: 1, gc: 0 };
           
           if (next.phase === 'STW') {
             work = { app: 0, gc: 2 };
-            // Instant cleanup
-            next.heap = next.heap.map(obj => obj.status === 'live' ? obj : { status: 'empty' });
-            next.phase = 'IDLE';
+            next.stwTimer -= 1;
+            if (next.stwTimer <= 0) {
+              // Instant cleanup
+              next.heap = next.heap.map(obj => obj.status === 'live' ? obj : { status: 'empty' });
+              next.phase = 'IDLE';
+            }
           } else {
             // Normal App Behavior
-            if (rand > 0.85 && next.heap[mutatorId].status === 'empty') next.heap[mutatorId] = { status: 'live' };
-            if (rand < 0.15 && next.heap[mutatorId].status === 'live') next.heap[mutatorId] = { status: 'dead' };
+            if (rand > 0.85 && next.heap[mutatorId].status === 'empty') next.heap[mutatorId] = { ...next.heap[mutatorId], status: 'live' };
+            if (rand < 0.15 && next.heap[mutatorId].status === 'live') next.heap[mutatorId] = { ...next.heap[mutatorId], status: 'dead' };
             
             // Trigger threshold
             const deadCount = next.heap.filter(o => o.status === 'dead').length;
-            if (deadCount > 8) next.phase = 'STW';
+            if (deadCount > 8) {
+              next.phase = 'STW';
+              next.stwTimer = 15;
+            }
           }
           next.history = [...next.history, work].slice(-60);
           return next;
@@ -468,7 +487,7 @@ const MemoryScaleView = ({ t }) => {
 
         // 2. Update Incremental GC
         setIncr(prev => {
-          let next = { ...prev };
+          let next = { ...prev, heap: [...prev.heap] };
           let work = { app: 0.9, gc: 0.15 };
 
           // Mutator Logic
@@ -476,7 +495,7 @@ const MemoryScaleView = ({ t }) => {
              // If we allocate ahead of the scanner, it's unscanned (white). 
              // If we allocate behind, we must mark it scanned immediately (Blue/Black) to prevent it dying too soon.
              const isBehind = mutatorId < next.scanPtr;
-             next.heap[mutatorId] = { status: 'live', scanned: isBehind };
+             next.heap[mutatorId] = { ...next.heap[mutatorId], status: 'live', scanned: isBehind };
           }
           if (rand < 0.15 && next.heap[mutatorId].status === 'live') {
             const isBehind = mutatorId < next.scanPtr;
@@ -484,9 +503,9 @@ const MemoryScaleView = ({ t }) => {
               // THE GHOST MECHANISM:
               // It was scanned (Blue), it is behind the line, and it just died.
               // It cannot be reclaimed this cycle.
-              next.heap[mutatorId].status = 'ghost';
+              next.heap[mutatorId] = { ...next.heap[mutatorId], status: 'ghost' };
             } else {
-              next.heap[mutatorId].status = 'dead';
+              next.heap[mutatorId] = { ...next.heap[mutatorId], status: 'dead' };
             }
           }
 
@@ -529,7 +548,7 @@ const MemoryScaleView = ({ t }) => {
     setIsRunning(false);
     setTick(0);
     const emptyHeap = () => Array.from({ length: HEAP_SIZE }, () => ({ status: 'empty', scanned: false }));
-    setClassic({ heap: emptyHeap(), phase: 'IDLE', history: [] });
+    setClassic({ heap: emptyHeap(), phase: 'IDLE', stwTimer: 0, history: [] });
     setIncr({ heap: emptyHeap(), scanPtr: -1, phase: 'IDLE', history: [] });
   };
 
@@ -545,6 +564,10 @@ const MemoryScaleView = ({ t }) => {
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-[#0d1117] px-4 py-2 rounded-xl border border-slate-800 flex items-center gap-3 font-mono text-sm shadow-inner">
+             <span className="text-[10px] font-black uppercase text-slate-500">{t.tick}</span>
+             <span className="text-emerald-400 font-bold w-12 text-right">{tick}</span>
+          </div>
           <div className="bg-[#0d1117] px-4 py-2 rounded-xl border border-slate-800 flex items-center gap-3">
              <span className="text-[10px] font-black uppercase text-slate-500">Sim Speed</span>
              <input type="range" min="0.5" max="5" step="0.5" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="accent-indigo-500 w-24" />
@@ -588,29 +611,20 @@ const MemoryScaleView = ({ t }) => {
           <EngineHeader title={t.incr} phase={incr.phase} accent="indigo" />
 
           <div className="grid grid-cols-8 gap-3 mb-10 relative">
-            {/* Wavefront Scanner Line */}
-            {incr.scanPtr !== -1 && (
-              <div 
-                className="absolute z-10 pointer-events-none transition-all duration-300 ease-linear"
-                style={{ 
-                  left: `${((incr.scanPtr % 8) / 8) * 100}%`, 
-                  top: `${Math.floor(incr.scanPtr / 8) * 16.6}%`, 
-                  height: '14%', 
-                  width: '3px', 
-                  backgroundColor: '#6366f1', 
-                  boxShadow: '0 0 15px #6366f1, 0 0 30px #6366f1' 
-                }}
-              />
-            )}
-            
-            {incr.heap.map((obj, i) => (
-              <MemoryBlock 
-                key={i} 
-                status={obj.status} 
-                scanned={obj.scanned} 
-                isScanning={i === incr.scanPtr} 
-              />
-            ))}
+            {incr.heap.map((obj, i) => {
+              // The scanner moves by 'step' blocks per tick (currently step=2).
+              // We highlight all blocks currently inside the scanner's active window.
+              const step = 2;
+              const isCurrentlyScanning = incr.phase === 'SCANNING' && i >= incr.scanPtr && i < incr.scanPtr + step;
+              return (
+                <MemoryBlock 
+                  key={i} 
+                  status={obj.status} 
+                  scanned={obj.scanned} 
+                  isScanning={isCurrentlyScanning} 
+                />
+              );
+            })}
           </div>
 
           <Legend t={t} showGhost />
@@ -637,9 +651,13 @@ const EngineHeader = ({ title, phase, accent = "slate" }) => (
 );
 
 const MemoryBlock = ({ status, scanned, isScanning }) => {
-  const base = "aspect-square rounded-xl border-2 transition-all duration-300 flex items-center justify-center relative";
+  const base = "aspect-square rounded-xl border-2 transition-all duration-150 flex items-center justify-center relative";
   
-  if (status === 'empty') return <div className={`${base} bg-[#0a0c10] border-slate-900`} />;
+  if (status === 'empty') {
+    return (
+      <div className={`${base} bg-[#0a0c10] border-slate-900 ${isScanning ? 'scale-110 ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#161b22] z-20 shadow-[0_0_15px_#6366f1]' : ''}`} />
+    );
+  }
   
   let styles = "";
   let icon = null;
@@ -657,25 +675,25 @@ const MemoryBlock = ({ status, scanned, isScanning }) => {
   }
 
   return (
-    <div className={`${base} ${styles} ${isScanning ? 'scale-110 ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#161b22]' : ''}`}>
+    <div className={`${base} ${styles} ${isScanning ? 'scale-110 ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#161b22] z-20 shadow-[0_0_15px_#6366f1]' : ''}`}>
       {icon}
     </div>
   );
 };
 
 const Legend = ({ t, showGhost }) => (
-  <div className="flex flex-wrap gap-4 px-2 py-3 bg-[#0d1117] rounded-2xl border border-slate-800/50">
+  <div className="grid grid-cols-2 gap-y-3 gap-x-4 px-4 py-4 bg-[#0d1117] rounded-2xl border border-slate-800/50">
     <LegendItem color="bg-white" label={t.legendLive} />
     <LegendItem color="bg-red-500" label={t.legendDead} />
-    <LegendItem color="bg-indigo-900/40 border-indigo-500" label={t.legendScanned} icon={<ShieldCheck size={10} />} />
-    {showGhost && <LegendItem color="bg-red-950 border-red-500" label={t.legendGhost} icon={<Ghost size={10} />} />}
+    <LegendItem color="bg-indigo-900/40 border-indigo-500" label={t.legendScanned} icon={<ShieldCheck size={12} />} />
+    {showGhost && <LegendItem color="bg-red-950 border-red-500" label={t.legendGhost} icon={<Ghost size={12} />} />}
   </div>
 );
 
 const LegendItem = ({ color, label, icon }) => (
-  <div className="flex items-center gap-2">
-    <div className={`w-3 h-3 rounded-md ${color} border flex items-center justify-center text-[8px] text-white`}>{icon}</div>
-    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{label}</span>
+  <div className="flex items-center gap-3">
+    <div className={`w-5 h-5 rounded-md ${color} border flex items-center justify-center text-white shadow-sm shrink-0`}>{icon}</div>
+    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight leading-tight">{label}</span>
   </div>
 );
 
