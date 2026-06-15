@@ -19,7 +19,13 @@ import {
   CheckCircle2,
   Lock,
   Globe,
-  UserPlus
+  UserPlus,
+  ChevronRight,
+  Search,
+  UserCheck,
+  FileCode,
+  Key,
+  Cpu
 } from 'lucide-react';
 
 const t = (lang, en, zh) => lang === 'en' ? en : zh;
@@ -448,69 +454,178 @@ function ExploitTab({ lang }) {
         </p>
       </div>
 
+      {/* Attack Vector Flow - Graphic Redesign */}
       <div className="bg-slate-950 border border-red-900/50 p-6 rounded-xl">
-        <h3 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-6">
+        <h3 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-8">
           <GitBranch className="w-5 h-5" /> {t(lang, 'The Attack Vector', '攻擊向量 (The Attack Vector)')}
         </h3>
         
-        <div className="grid md:grid-cols-4 gap-4 relative">
-          {/* Connecting line for desktop */}
-          <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-800 -z-10 translate-y-[-50%]"></div>
+        <div className="flex flex-col md:flex-row items-stretch gap-3 md:gap-4 relative z-0">
           
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg relative z-10">
-            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-3">
-              <span className="font-bold text-slate-300">1</span>
+          {/* Step 1 */}
+          <div className="flex-1 bg-slate-900 border border-slate-800 p-4 rounded-lg relative flex flex-col items-center text-center shadow-md">
+            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3 border-4 border-slate-950 shadow-inner">
+              <Search className="w-5 h-5 text-slate-300" />
             </div>
-            <h4 className="font-bold text-white mb-2">{t(lang, 'Identify Orphans', '識別孤兒套件 (Identify Orphans)')}</h4>
+            <div className="absolute top-2 right-3 font-bold text-slate-700 opacity-50">1</div>
+            <h4 className="font-bold text-white mb-2 text-sm">{t(lang, 'Identify Orphans', '識別孤兒套件 (Identify Orphans)')}</h4>
             <p className="text-xs text-slate-400">
               {t(lang,
-                'Attackers scanned the AUR for popular packages whose maintainers had abandoned them for 180+ days.',
-                '攻擊者掃描 AUR，尋找被維護者 (maintainers) 遺棄超過 180 天的熱門套件。'
+                'Scanned AUR for abandoned packages (180+ days inactive).',
+                '掃描 AUR 尋找被遺棄的套件 (超過 180 天不活躍)。'
               )}
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg relative z-10">
-            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-3">
-              <span className="font-bold text-slate-300">2</span>
+          {/* Connector Arrow */}
+          <div className="hidden md:flex items-center justify-center text-slate-700 shrink-0">
+            <ChevronRight className="w-6 h-6" />
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex-1 bg-slate-900 border border-slate-800 p-4 rounded-lg relative flex flex-col items-center text-center shadow-md">
+            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3 border-4 border-slate-950 shadow-inner">
+              <UserCheck className="w-5 h-5 text-slate-300" />
             </div>
-            <h4 className="font-bold text-white mb-2">{t(lang, 'Adopt Package', '接管套件 (Adopt Package)')}</h4>
+            <div className="absolute top-2 right-3 font-bold text-slate-700 opacity-50">2</div>
+            <h4 className="font-bold text-white mb-2 text-sm">{t(lang, 'Adopt Package', '接管套件 (Adopt Package)')}</h4>
             <p className="text-xs text-slate-400">
               {t(lang,
-                'Using the automated AUR request system, attackers legally claimed maintainership of the abandoned repos.',
-                '使用自動化的 AUR 請求系統，攻擊者合法地取得了這些被遺棄儲存庫的維護權 (maintainership)。'
+                'Used automated requests to legally claim maintainership.',
+                '使用自動化請求合法取得維護權。'
               )}
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-red-900 p-4 rounded-lg relative z-10 shadow-[0_0_15px_rgba(220,38,38,0.15)]">
-            <div className="w-8 h-8 rounded-full bg-red-900/50 flex items-center justify-center mb-3 text-red-400">
-              <Terminal className="w-4 h-4" />
+          {/* Connector Arrow */}
+          <div className="hidden md:flex items-center justify-center text-red-900 shrink-0">
+            <ChevronRight className="w-6 h-6" />
+          </div>
+
+          {/* Step 3 */}
+          <div className="flex-1 bg-slate-900 border border-red-900/50 p-4 rounded-lg relative flex flex-col items-center text-center shadow-[0_0_15px_rgba(220,38,38,0.1)]">
+            <div className="w-12 h-12 rounded-full bg-red-900/40 flex items-center justify-center mb-3 border-4 border-slate-950 shadow-inner">
+              <Terminal className="w-5 h-5 text-red-400" />
             </div>
-            <h4 className="font-bold text-red-300 mb-2">{t(lang, 'Weaponize PKGBUILD', '武器化 PKGBUILD (Weaponize PKGBUILD)')}</h4>
+            <div className="absolute top-2 right-3 font-bold text-red-900/40 opacity-50">3</div>
+            <h4 className="font-bold text-red-300 mb-2 text-sm">{t(lang, 'Weaponize PKGBUILD', '武器化 PKGBUILD (Weaponize)')}</h4>
             <p className="text-xs text-slate-400">
               {t(lang,
-                'Pushed new version updates containing hidden NPM/Bun hooks in the package install instructions.',
-                '推送包含隱藏 NPM/Bun 掛鉤 (hooks) 的新版本更新至套件安裝指令中。'
+                'Pushed updates containing hidden NPM/Bun hooks.',
+                '推送包含隱藏 NPM/Bun 掛鉤的新版本。'
               )}
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-red-900 p-4 rounded-lg relative z-10 shadow-[0_0_15px_rgba(220,38,38,0.15)]">
-            <div className="w-8 h-8 rounded-full bg-red-900/50 flex items-center justify-center mb-3 text-red-400">
-              <Lock className="w-4 h-4" />
+          {/* Connector Arrow */}
+          <div className="hidden md:flex items-center justify-center text-red-800 shrink-0">
+            <ChevronRight className="w-6 h-6" />
+          </div>
+
+          {/* Step 4 */}
+          <div className="flex-1 bg-slate-900 border border-red-900/80 p-4 rounded-lg relative flex flex-col items-center text-center shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+            <div className="w-12 h-12 rounded-full bg-red-900/60 flex items-center justify-center mb-3 border-4 border-slate-950 shadow-inner">
+              <Lock className="w-5 h-5 text-red-300" />
             </div>
-            <h4 className="font-bold text-red-300 mb-2">{t(lang, 'Payload Drop', '投遞有效負載 (Payload Drop)')}</h4>
+            <div className="absolute top-2 right-3 font-bold text-red-900/40 opacity-50">4</div>
+            <h4 className="font-bold text-red-300 mb-2 text-sm">{t(lang, 'Payload Drop', '投遞有效負載 (Payload Drop)')}</h4>
             <p className="text-xs text-slate-400">
               {t(lang,
-                'When users ran `yay -Syu`, the hooks executed during build time, dropping a Rust infostealer and eBPF rootkit.',
-                '當用戶運行 `yay -Syu` 時，掛鉤 (hooks) 在構建時 (build time) 執行，植入 Rust 資訊竊取程式 (infostealer) 和 eBPF rootkit。'
+                'Hooks execute during `yay -Syu` to drop malware.',
+                '掛鉤在 `yay -Syu` 期間執行以植入惡意軟件。'
               )}
             </p>
           </div>
         </div>
       </div>
 
+      {/* NEW: Injected Payloads Breakdown - Graphic Redesign */}
+      <div className="bg-slate-950 border border-slate-800 p-6 rounded-xl">
+        <h3 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
+          <Terminal className="w-5 h-5" />
+          {t(lang, 'Injected Payloads & Malware Mechanics', '注入的有效負載與惡意軟件機制 (Injected Payloads & Malware Mechanics)')}
+        </h3>
+        <p className="text-sm text-slate-300 mb-8">
+          {t(lang,
+            'The attack was multi-staged, beginning inside the package install hook files and escalating all the way into the Linux kernel if elevated privileges were present during the package build.',
+            '該攻擊是多階段的，始於套件安裝掛鉤檔案 (package install hook files) 內部，如果套件構建過程中存在提升的權限，則會一路提權至 Linux 核心。'
+          )}
+        </p>
+
+        {/* Escalation Timeline */}
+        <div className="relative pl-6 md:pl-10 space-y-8">
+          {/* Vertical connecting line */}
+          <div className="absolute left-2.5 md:left-[17px] top-6 bottom-6 w-1 bg-slate-800 rounded-full z-0"></div>
+
+          {/* Stage 1 */}
+          <div className="relative bg-slate-900 p-5 rounded-lg border border-slate-800 ml-4 md:ml-8 shadow-md">
+            <div className="absolute -left-[3rem] md:-left-[3.75rem] top-5 w-12 h-12 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center border-4 border-slate-950 shadow-[0_0_15px_rgba(234,179,8,0.2)] z-10">
+              <FileCode className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-3">
+              <span className="inline-block px-2.5 py-1 text-xs font-bold uppercase bg-yellow-500/20 text-yellow-400 rounded w-fit">
+                {t(lang, 'Stage 1: Dropper Hook', '階段 1：投放器掛鉤 (Stage 1: Dropper Hook)')}
+              </span>
+              <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded">npm / bun execution</span>
+            </div>
+            <h4 className="font-bold text-white mb-2 text-lg">
+              {t(lang, 'Malicious Package Manager Invocation', '惡意套件管理器調用 (Malicious Package Manager Invocation)')}
+            </h4>
+            <p className="text-sm text-slate-400">
+              {t(lang,
+                'Attackers added custom post-install scripts to the package metadata and install hook configs, executing stealthy dependencies such as `npm install atomic-lockfile` or `bun install js-digest` directly during build/package phase.',
+                '攻擊者在套件中繼資料和安裝掛鉤設定中，加入了自訂的安裝後指令碼。這在構建/打包階段會直接觸發執行隱蔽的依賴調用，例如 `npm install atomic-lockfile` 或 `bun install js-digest`。'
+              )}
+            </p>
+          </div>
+
+          {/* Stage 2 */}
+          <div className="relative bg-slate-900 p-5 rounded-lg border border-slate-800 ml-4 md:ml-8 shadow-md">
+            <div className="absolute -left-[3rem] md:-left-[3.75rem] top-5 w-12 h-12 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center border-4 border-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.2)] z-10">
+              <Key className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-3">
+              <span className="inline-block px-2.5 py-1 text-xs font-bold uppercase bg-orange-500/20 text-orange-400 rounded w-fit">
+                {t(lang, 'Stage 2: Infostealer Payload', '階段 2：資訊竊取程式負載 (Stage 2: Infostealer Payload)')}
+              </span>
+              <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded">Rust compiled binary</span>
+            </div>
+            <h4 className="font-bold text-white mb-2 text-lg">
+              {t(lang, 'Aggressive Secret Harvesting', '儲存憑證與金鑰收割 (Aggressive Secret Harvesting)')}
+            </h4>
+            <p className="text-sm text-slate-400">
+              {t(lang,
+                'A compiled Rust infostealer binary is downloaded and executed. It targets developer workspace paths to harvest local credentials: SSH keys, AWS/Azure/GCP cloud configurations, GitHub and npm API tokens, browser databases, and active session cookies for Slack, Discord, and Telegram.',
+                '系統會下載並執行一個編譯好的 Rust 資訊竊取程式 (infostealer) 二進位檔。它專門針對開發人員工作區路徑，以收割本地憑證：包含 SSH 金鑰、AWS/Azure/GCP 雲端配置、GitHub 和 npm API 權杖、瀏覽器密碼資料庫，以及 Slack、Discord 和 Telegram 的活動工作階段 Cookie。'
+              )}
+            </p>
+          </div>
+
+          {/* Stage 3 */}
+          <div className="relative bg-slate-900 p-5 rounded-lg border border-red-900/50 ml-4 md:ml-8 shadow-[0_0_20px_rgba(220,38,38,0.1)]">
+            <div className="absolute -left-[3rem] md:-left-[3.75rem] top-5 w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center border-4 border-slate-950 shadow-[0_0_15px_rgba(239,68,68,0.3)] z-10">
+              <Cpu className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-3">
+              <span className="inline-block px-2.5 py-1 text-xs font-bold uppercase bg-red-500/20 text-red-400 rounded w-fit">
+                {t(lang, 'Stage 3: Kernel Escalation', '階段 3：內核級提權 (Stage 3: Kernel Escalation)')}
+              </span>
+              <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded border border-red-900/30">eBPF Rootkit</span>
+            </div>
+            <h4 className="font-bold text-white mb-2 text-lg">
+              {t(lang, 'Kernel-Level Process & File Hiding', '內核級進程與檔案隱蔽 (Kernel-Level Process & File Hiding)')}
+            </h4>
+            <p className="text-sm text-slate-400">
+              {t(lang,
+                'If the build script was executed with administrative root privileges (common with wrapper installations calling sudo), the payload loads an eBPF (Extended Berkeley Packet Filter) rootkit into the running kernel. This rootkit intercepts kernel system calls to completely mask the malware processes and modified files from traditional discovery tools like `ps`, `top`, or `ls`.',
+                '如果構建腳本是以系統管理員 root 權限執行的（這在使用調用 sudo 的外殼安裝助手時很常見），有效負載會將一個 eBPF (Extended Berkeley Packet Filter) rootkit 載入到運行中的內核。這個 rootkit 會攔截內核系統調用，從而使惡意進程和修改過的檔案對傳統的發現工具（如 `ps`、`top` 或 `ls`）完全隱形。'
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Devastating Context Summary */}
       <div className="bg-slate-950 border border-slate-800 p-6 rounded-xl mt-6">
         <h3 className="text-lg font-bold text-white mb-3">
           {t(lang, 'Why it was devastating', '為何如此具有破壞性 (Why it was devastating)')}
