@@ -139,8 +139,8 @@ export default function App() {
   const t = (key) => translations[lang][key] || key;
   const slide = translations[lang].slides[currentSlide];
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev === translations[lang].slides.length - 1 ? 0 : prev + 1));
-  const prevSlide = () => setCurrentSlide((prev) => (prev === 0 ? translations[lang].slides.length - 1 : prev - 1));
+  const nextSlide = () => setCurrentSlide((prev) => (prev === translations[lang].slides.length - 1 ? prev : prev + 1));
+  const prevSlide = () => setCurrentSlide((prev) => (prev === 0 ? 0 : prev - 1));
 
   return (
     <div className="w-screen h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans overflow-hidden">
@@ -195,10 +195,16 @@ export default function App() {
       </main>
 
       <footer className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-        <button onClick={prevSlide} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition">
+        <button 
+          onClick={prevSlide} 
+          disabled={currentSlide === 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl transition ${currentSlide === 0 ? 'bg-slate-50 text-slate-300 dark:bg-slate-800/50 dark:text-slate-600 cursor-not-allowed' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200'}`}>
           <ChevronLeft /> {t('prev')}
         </button>
-        <button onClick={nextSlide} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg">
+        <button 
+          onClick={nextSlide} 
+          disabled={currentSlide === translations[lang].slides.length - 1}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl transition shadow-lg ${currentSlide === translations[lang].slides.length - 1 ? 'bg-blue-300 text-blue-50 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
           {t('next')} <ChevronRight />
         </button>
       </footer>
